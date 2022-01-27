@@ -5,15 +5,13 @@ pragma solidity ^0.8.0;
 //Get a script to estimate gas cost
 //Fix overlaping players
 //Write unit tests
-//Fix integer sizes
-//Cap size LB, UB
 //Make a BattleRoyaleDeployer
 //Abstract Vault
 //Make upgradable
 
 contract BattleRoyale{
-    uint256 public SIZE;
-    address owner;
+    uint8 public SIZE;
+    address public owner;
 
     enum Direction {North, East, South, West}
 
@@ -22,27 +20,28 @@ contract BattleRoyale{
         _;
     }
 
-    event PlayerSpawned(address _player, uint256 _x, uint256 _y);
+    event PlayerSpawned(address _player, uint8 _x, uint8 _y);
     event PlayerKilled(address _victim, address _killer);
-    event PlayerAttacked(address _victim, uint256 health);
+    event PlayerAttacked(address _victim, uint8 health);
     event PlayerExited(address _player);
-    event PlayerMoved(address _player, uint256 _x, uint256 _y);
-    event PlayerCollected(address _player, uint256 _x, uint256 _y);
-    event LootDropped(uint256 amount, uint256 _x, uint256 _y);
+    event PlayerMoved(address _player, uint8 _x, uint8 _y);
+    event PlayerCollected(address _player, uint8 _x, uint8 _y);
+    event LootDropped(uint64 amount, uint8 _x, uint8 _y);
 
     struct Player {
-        uint256 x;
-        uint256 y;
+        uint8 x;
+        uint8 y;
         bool initialised;
         Direction facing;
-        uint256 health;
-        uint256 wealth;
+        uint8 health;
+        uint64 wealth;
     }
 
     mapping(address => Player) public players;
-    mapping(uint => uint) public drops;
+    mapping(uint16 => uint64) public drops;
 
-    constructor(uint16 _size){
+    constructor(uint8 _size){
+        require(_size > 10 && _size < 250);
         SIZE = _size;
         owner = msg.sender;
     }
@@ -91,7 +90,7 @@ contract BattleRoyale{
     public
     payable {
         require(players[msg.sender].initialised == false, "Cannot already be playing");
-        require(msg.value == 0.001 ether);
+        //require(msg.value == 0.001 ether);
 
         //Fix randomness
         players[msg.sender] = _initialisePlayer();
@@ -129,7 +128,7 @@ contract BattleRoyale{
     function collect()
     public
     onlyInitialisedPlayers {
-        uint256 location = players[msg.sender].x + (players[msg.sender].y * SIZE);
+        uint16 location = players[msg.sender].x + (players[msg.sender].y * SIZE);
         players[msg.sender].wealth += drops[location];
         drops[location] = 0;
         emit PlayerCollected(msg.sender, players[msg.sender].x, players[msg.sender].y);
@@ -137,30 +136,30 @@ contract BattleRoyale{
     }
 
     //Spreading is so expensive!
-    function _spread(uint256 amount)
+    function _spread(uint64 amount)
     private {
         uint256 seed = uint256(blockhash(block.number - 1));
-        uint256 numberofdrops = SIZE / 10;
+        uint8 numberofdrops = SIZE / 10;
         for(uint256 i; i < numberofdrops; i++){
-            uint256 location = uint256(keccak256(abi.encode(seed, i))) % (SIZE ** 2);
-            drops[location] += amount / numberofdrops;
-            emit LootDropped(amount/numberofdrops, location % SIZE, location / SIZE);
+            uint16 location = uint16(uint256(keccak256(abi.encode(seed, i))) % (SIZE ** 2));
+            drops[location] += uint64(amount / numberofdrops);
+            emit LootDropped(amount/uint64(numberofdrops), uint8(location % uint16(SIZE)), uint8(location / uint16(SIZE)));
         }
     }
 
     function _getRandom()
     private
     view
-    returns(uint256 memory rand){
-        uint256 rand = uint256(blockhash(block.number - 1)) % (SIZE ** 2);
+    returns(uint256 rand){
+        rand = uint256(blockhash(block.number - 1)) % (uint256(SIZE) ** 2);
     }
 
-    function _getRandomLocation()
+    function _initialisePlayer()
     private
     view
     returns(Player memory p){
-        uint256 position = _getRandom % (SIZE ** 2);
-        p = Player(position % SIZE, position / SIZE, true, Direction.North, 3, 0.001 ether);
+        uint16 position = uint16(_getRandom() % (uint256(SIZE) ** 2));
+        p = Player(uint8(position % uint16(SIZE)), uint8(position / uint16(SIZE)), true, Direction.North, 3, 0.001 ether);
     }
 
     function withdraw(address payable _to) public {
