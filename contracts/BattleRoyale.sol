@@ -92,10 +92,9 @@ contract BattleRoyale{
     payable {
         require(players[msg.sender].initialised == false, "Cannot already be playing");
         require(msg.value == 0.001 ether);
-        //Change _getRandomlocation function
-        //Make _getRandom function
+
         //Fix randomness
-        players[msg.sender] = _getRandomLocation();
+        players[msg.sender] = _initialisePlayer();
         emit PlayerSpawned(msg.sender, players[msg.sender].x, players[msg.sender].y);
     }
 
@@ -117,8 +116,7 @@ contract BattleRoyale{
                 (players[msg.sender].x == players[victim].x + 1 &&
                 players[msg.sender].y == players[victim].y &&
                 players[msg.sender].facing == Direction.West));
-        //Change health
-        players[victim].health -= 5;
+        players[victim].health -= 1;
         emit PlayerAttacked(victim, players[victim].health);
         //Health check
         if(players[victim].health <= 0){
@@ -150,12 +148,19 @@ contract BattleRoyale{
         }
     }
 
+    function _getRandom()
+    private
+    view
+    returns(uint256 memory rand){
+        uint256 rand = uint256(blockhash(block.number - 1)) % (SIZE ** 2);
+    }
+
     function _getRandomLocation()
     private
     view
     returns(Player memory p){
-        uint256 position = uint256(blockhash(block.number - 1)) % (SIZE ** 2);
-        p = Player(position % SIZE, position / SIZE, true, Direction.North, 10, 0.001 ether);
+        uint256 position = _getRandom % (SIZE ** 2);
+        p = Player(position % SIZE, position / SIZE, true, Direction.North, 3, 0.001 ether);
     }
 
     function withdraw(address payable _to) public {
