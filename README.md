@@ -1,15 +1,3 @@
-# Basic Sample Hardhat Project
+# BattleRoyale
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+A simple battleroyale game built for Ethereum. Commit 0.001 eth to your character and slay others to collect their bounty. Played on a 2-D grid.
